@@ -1,4 +1,4 @@
-name: test_project
+name: khtml_hackathon_fe
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -30,11 +30,14 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  shared_preferences: ^2.2.3
 
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
+  http: ^1.2.0
+  kakao_flutter_sdk: ^1.9.2
 
 dev_dependencies:
   flutter_test:
@@ -52,7 +55,17 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
-
+  fonts:
+    - family: GmarketSansTTFBold
+      fonts:
+        - asset: assets/fonts/GmarketSansTTFBold.ttf
+    - family: GmarketSansTTFLight
+      fonts:
+        - asset: assets/fonts/GmarketSansTTFLight.ttf
+    - family: GmarketSansTTFMedium
+      fonts:
+        - asset: assets/fonts/GmarketSansTTFMedium.ttf
+  # The following line ensures that the Material Icons fo
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.

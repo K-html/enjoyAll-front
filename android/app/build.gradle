@@ -4,27 +4,9 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
-def localProperties = new Properties()
-def localPropertiesFile = rootProject.file('local.properties')
-if (localPropertiesFile.exists()) {
-    localPropertiesFile.withReader('UTF-8') { reader ->
-        localProperties.load(reader)
-    }
-}
-
-def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
-if (flutterVersionCode == null) {
-    flutterVersionCode = '1'
-}
-
-def flutterVersionName = localProperties.getProperty('flutter.versionName')
-if (flutterVersionName == null) {
-    flutterVersionName = '1.0'
-}
-
 android {
-    namespace "com.example.test_project"
-    compileSdkVersion flutter.compileSdkVersion
+    namespace "com.example.khtml_hackathon_fe"
+    compileSdkVersion 34 // 여기에서 compileSdkVersion을 34로 직접 설정
     ndkVersion flutter.ndkVersion
 
     compileOptions {
@@ -32,29 +14,16 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
-    kotlinOptions {
-        jvmTarget = '1.8'
-    }
-
-    sourceSets {
-        main.java.srcDirs += 'src/main/kotlin'
-    }
-
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId "com.example.test_project"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
-        minSdkVersion flutter.minSdkVersion
-        targetSdkVersion flutter.targetSdkVersion
-        versionCode flutterVersionCode.toInteger()
-        versionName flutterVersionName
+        applicationId "com.example.khtml_hackathon_fe"
+        minSdkVersion 21 // 21로설정
+        targetSdkVersion 34 // 여기에서 targetSdkVersion을 34로 직접 설정
+        versionCode 1 // 여기에서 버전 코드를 하드코딩으로 설정
+        versionName "1.0" // 여기에서 버전 이름을 하드코딩으로 설정
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig signingConfigs.debug
         }
     }
@@ -63,5 +32,3 @@ android {
 flutter {
     source '../..'
 }
-
-dependencies {}
