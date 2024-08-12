@@ -203,6 +203,12 @@ class _MobileState extends State<Mobile> {
     '주거복지',
   ];
 
+  Future<void> _saveSelectedCategories() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> selectedList = widget.selectedCategories.toList();
+    await prefs.setStringList('selectedCategories', selectedList);
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -378,6 +384,9 @@ class _MobileState extends State<Mobile> {
                       widget.selectedCategories.add(category);
                     }
 
+                    _saveSelectedCategories();  // 변경된 카테고리를 저장
+
+                    // 선택된 카테고리 목록을 출력
                     print('Selected Categories: ${widget.selectedCategories}');
                   });
                 },
@@ -388,6 +397,7 @@ class _MobileState extends State<Mobile> {
       ),
     );
   }
+
 
   Widget _buildContentSection() {
     return ListView.builder(
