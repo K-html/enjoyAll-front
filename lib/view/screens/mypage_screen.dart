@@ -31,7 +31,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
 
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('login_token'); // 로그인 토큰 삭제
+    await prefs.remove('jwt_token'); // 로그인 토큰 삭제
     await prefs.remove('nickname'); // 닉네임 삭제
 
     // 로그아웃 후 로그인 화면으로 이동

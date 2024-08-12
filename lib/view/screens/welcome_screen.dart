@@ -17,7 +17,7 @@ class WelcomeScreen extends StatelessWidget {
               height: 223,
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: NetworkImage("https://via.placeholder.com/223x542"),
+                  image: AssetImage('assets/images/welcomescreen_image.jpg'),
                   fit: BoxFit.cover,
                 ),
               ),

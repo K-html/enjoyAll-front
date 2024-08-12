@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'main_screen.dart';
+import 'categoryselect_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -22,7 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
     KakaoSdk.init(
-        nativeAppKey: 'cf72c449254527e96b9113645e895f57'); // 카카오 SDK 초기화
+        nativeAppKey: 'a992f248ec54d8a88ff00f88d7425feb'); // 카카오 SDK 초기화
   }
 
   Future<void> _login() async {
@@ -31,14 +31,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
     // 테스트용 계정과 비밀번호 확인
     if (email == 'test' && password == 'test') {
-      // 아이디와 비밀번호가 "test"일 경우 메인 페이지로 이동
+      // 백엔드 없이 임시로 테스트용 토큰을 저장하고 메인 페이지로 이동
+      await _saveJwtToken('dummy_test_token');
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => MainScreen()),
+        MaterialPageRoute(builder: (context) => CategorySelectScreen()),
       );
       return; // 메인 페이지로 이동 후 이 메서드를 종료
     }
 
+    // 실제 백엔드가 구현되면 아래 코드가 실행되도록 남겨둡니다.
     try {
       final response = await http.post(
         Uri.parse('https://your-backend-api.com/login'), // 백엔드 로그인 API 주소
@@ -56,7 +58,8 @@ class _LoginScreenState extends State<LoginScreen> {
         await _saveJwtToken(responseData['token']); // JWT 토큰 저장
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => MainScreen()), // 메인 화면으로 이동
+          MaterialPageRoute(
+              builder: (context) => CategorySelectScreen()), // 메인 화면으로 이동
         );
       } else {
         setState(() {
@@ -77,7 +80,8 @@ class _LoginScreenState extends State<LoginScreen> {
         await UserApi.instance.loginWithKakaoTalk();
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => MainScreen()), // 메인 화면으로 이동
+          MaterialPageRoute(
+              builder: (context) => CategorySelectScreen()), // 메인 화면으로 이동
         );
       } catch (error) {
         if (error is PlatformException && error.code == 'CANCELED') {
@@ -88,7 +92,8 @@ class _LoginScreenState extends State<LoginScreen> {
           await UserApi.instance.loginWithKakaoAccount();
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => MainScreen()), // 메인 화면으로 이동
+            MaterialPageRoute(
+                builder: (context) => CategorySelectScreen()), // 메인 화면으로 이동
           );
         } catch (error) {
           print('카카오계정으로 로그인 실패 $error'); // 오류 메시지 출력
@@ -100,7 +105,8 @@ class _LoginScreenState extends State<LoginScreen> {
         await UserApi.instance.loginWithKakaoAccount();
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => MainScreen()), // 메인 화면으로 이동
+          MaterialPageRoute(
+              builder: (context) => CategorySelectScreen()), // 메인 화면으로 이동
         );
       } catch (error) {
         print('카카오계정으로 로그인 실패 $error'); // 오류 메시지 출력

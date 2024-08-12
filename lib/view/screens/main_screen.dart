@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'chat_screen.dart';
 import 'favorite_screen.dart';
-import 'mypage_screen.dart'; // MyPageScreen 임포트
+import 'mypage_screen.dart';
 
 void main() {
   runApp(const FigmaToCodeApp());
@@ -32,12 +32,14 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
   final PageController _pageController = PageController();
-  List<Map<String, String>> _favorites = []; // 즐겨찾기 리스트
+  List<Map<String, String>> _favorites = [];
+  Set<String> selectedCategories = {};
 
   @override
   void initState() {
     super.initState();
     _loadFavorites();
+    _loadSelectedCategories();
   }
 
   Future<void> _loadFavorites() async {
@@ -52,10 +54,14 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
-  Future<void> _saveFavorites() async {
+  Future<void> _loadSelectedCategories() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> favoriteList = _favorites.map((e) => jsonEncode(e)).toList();
-    await prefs.setStringList('favorites', favoriteList);
+    List<String>? selectedList = prefs.getStringList('selectedCategories');
+    if (selectedList != null) {
+      setState(() {
+        selectedCategories = selectedList.toSet();
+      });
+    }
   }
 
   void _onItemTapped(int index) {
@@ -63,12 +69,6 @@ class _MainScreenState extends State<MainScreen> {
       _selectedIndex = index;
     });
     _pageController.jumpToPage(index);
-  }
-
-  final String nickname = 'User';
-  final String email = 'user@example.com';
-  void _onBackFromChat() {
-    _onItemTapped(0); // 첫 번째 페이지(Home)로 이동
   }
 
   @override
@@ -86,18 +86,17 @@ class _MainScreenState extends State<MainScreen> {
           Mobile(
             favorites: _favorites,
             onFavoriteToggle: _toggleFavorite,
+            selectedCategories: selectedCategories,
           ),
-          ChatScreen(onBack: _onBackFromChat), // 수정된 ChatScreen 사용
+          ChatScreen(onBack: _onBackFromChat),
           FavoriteScreen(favorites: _favorites),
-          MyPageScreen(nickname: nickname, email: email), // MyPageScreen 추가
+          MyPageScreen(nickname: 'User', email: 'user@example.com'),
         ],
       ),
       bottomNavigationBar: _selectedIndex == 1
-          ? null // 채팅 화면에서는 BottomNavigationBar 숨기기
+          ? null
           : Theme(
-              data: Theme.of(context).copyWith(
-                canvasColor: Colors.white,
-              ),
+              data: Theme.of(context).copyWith(canvasColor: Colors.white),
               child: BottomNavigationBar(
                 currentIndex: _selectedIndex,
                 onTap: _onItemTapped,
@@ -105,21 +104,13 @@ class _MainScreenState extends State<MainScreen> {
                 unselectedItemColor: Colors.grey,
                 items: const <BottomNavigationBarItem>[
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.home),
-                    label: 'Home',
-                  ),
+                      icon: Icon(Icons.home), label: 'Home'),
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.chat),
-                    label: 'Chat',
-                  ),
+                      icon: Icon(Icons.chat), label: 'Chat'),
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.favorite),
-                    label: 'Favorites',
-                  ),
+                      icon: Icon(Icons.favorite), label: 'Favorites'),
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.person),
-                    label: 'My', // 'My' 버튼
-                  ),
+                      icon: Icon(Icons.person), label: 'My'),
                 ],
               ),
             ),
@@ -134,18 +125,30 @@ class _MainScreenState extends State<MainScreen> {
         _favorites.add(item);
       }
     });
-    _saveFavorites(); // 상태 변경 후 저장
+    _saveFavorites();
+  }
+
+  Future<void> _saveFavorites() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> favoriteList = _favorites.map((e) => jsonEncode(e)).toList();
+    await prefs.setStringList('favorites', favoriteList);
+  }
+
+  void _onBackFromChat() {
+    _onItemTapped(0);
   }
 }
 
 class Mobile extends StatefulWidget {
   final List<Map<String, String>> favorites;
   final Function(Map<String, String>) onFavoriteToggle;
+  final Set<String> selectedCategories;
 
   const Mobile({
     Key? key,
     required this.favorites,
     required this.onFavoriteToggle,
+    required this.selectedCategories,
   }) : super(key: key);
 
   @override
@@ -154,8 +157,7 @@ class Mobile extends StatefulWidget {
 
 class _MobileState extends State<Mobile> {
   bool isPopularOrder = false;
-  bool isCategorySectionVisible = false; // 카테고리 섹션 표시 여부
-  Set<String> selectedCategories = {}; // 선택된 카테고리들
+  bool isCategorySectionVisible = false;
 
   final List<Map<String, String>> data = [
     {
@@ -233,7 +235,6 @@ class _MobileState extends State<Mobile> {
           ),
         ),
         const Divider(
-          // 구분선 추가
           height: 1,
           thickness: 1,
           color: Color(0xFF909090),
@@ -275,7 +276,7 @@ class _MobileState extends State<Mobile> {
             Icon(
               isCategorySectionVisible
                   ? Icons.arrow_drop_up
-                  : Icons.arrow_drop_down, // 화살표 아이콘 변경
+                  : Icons.arrow_drop_down,
               color: Colors.black,
               size: 20,
             ),
@@ -345,8 +346,7 @@ class _MobileState extends State<Mobile> {
   }
 
   Widget _buildCategorySection() {
-    if (!isCategorySectionVisible)
-      return SizedBox.shrink(); // 카테고리 섹션이 보이지 않도록 함
+    if (!isCategorySectionVisible) return SizedBox.shrink();
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 10),
@@ -355,8 +355,7 @@ class _MobileState extends State<Mobile> {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: categories.map((category) {
-            final isSelected =
-                selectedCategories.contains(category); // 선택된 카테고리인지 확인
+            final isSelected = widget.selectedCategories.contains(category);
             return Padding(
               padding: const EdgeInsets.only(right: 8),
               child: FilterChip(
@@ -367,20 +366,19 @@ class _MobileState extends State<Mobile> {
                   fontFamily: 'GmarketSansTTFBold',
                   fontWeight: FontWeight.w500,
                 ),
-                backgroundColor: Color(0xFFFBFBFB), // 선택되지 않은 경우 배경색
-                selectedColor: Colors.blue, // 선택된 경우 배경색
-                checkmarkColor: Colors.white, // 체크표시 색상
+                backgroundColor: Color(0xFFFBFBFB),
+                selectedColor: Colors.blue,
+                checkmarkColor: Colors.white,
                 selected: isSelected,
                 onSelected: (bool selected) {
                   setState(() {
                     if (isSelected) {
-                      selectedCategories.remove(category);
+                      widget.selectedCategories.remove(category);
                     } else {
-                      selectedCategories.add(category);
+                      widget.selectedCategories.add(category);
                     }
 
-                    print('Selected Categories: $selectedCategories');
-                    // 여기에 API 요청 로직을 추가하여 선택된 카테고리들을 서버로 보낼 수 있습니다.
+                    print('Selected Categories: ${widget.selectedCategories}');
                   });
                 },
               ),
@@ -392,14 +390,13 @@ class _MobileState extends State<Mobile> {
   }
 
   Widget _buildContentSection() {
-    // 서버로부터 가져온 데이터를 사용하여 UI 업데이트
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
       itemCount: data.length,
       itemBuilder: (context, index) {
         final item = data[index];
-        final isFavorite = widget.favorites
-            .any((favorite) => mapEquals(favorite, item)); // 즐겨찾기 상태 확인
+        final isFavorite =
+            widget.favorites.any((favorite) => mapEquals(favorite, item));
         return GestureDetector(
           onTap: () {
             Navigator.push(

@@ -30,7 +30,7 @@ class _ChatScreenState extends State<ChatScreen> {
   double _fontSize = 16.0; // 기본 폰트 크기 설정
 
   final List<Map<String, dynamic>> categories = [
-    {'name': '저소득 복지', 'icon': Icons.volunteer_activism},
+    {'name': '저소득복지', 'icon': Icons.volunteer_activism},
     {'name': '보훈대상자', 'icon': Icons.military_tech},
     {'name': '사회복지시설', 'icon': Icons.home_work},
     {'name': '어르신', 'icon': Icons.elderly},

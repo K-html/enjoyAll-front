@@ -55,6 +55,10 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  assets:
+    - assets/images/welcomescreen_image.jpg
+    - assets/images/welcomescreen_image.jpg
+
   fonts:
     - family: GmarketSansTTFBold
       fonts:

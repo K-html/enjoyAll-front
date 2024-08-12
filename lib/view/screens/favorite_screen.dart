@@ -32,40 +32,51 @@ class FavoriteScreen extends StatelessWidget {
         ),
         elevation: 0, // 그림자 제거
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
-        itemCount: favorites.length,
-        itemBuilder: (context, index) {
-          final item = favorites[index];
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => DetailScreen(
-                    title: item['title']!,
-                    date: item['date']!,
-                    category1: item['category1']!,
-                    category2: item['category2']!,
-                    details: item['details']!,
+      body: favorites.isEmpty
+          ? Center(
+              child: Text(
+                '즐겨찾기한 항목이 없습니다.',
+                style: TextStyle(
+                  fontSize: 24,
+                  color: Colors.black54,
+                  fontFamily: 'GmarketSansTTFBold',
+                ),
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+              itemCount: favorites.length,
+              itemBuilder: (context, index) {
+                final item = favorites[index];
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DetailScreen(
+                          title: item['title']!,
+                          date: item['date']!,
+                          category1: item['category1']!,
+                          category2: item['category2']!,
+                          details: item['details']!,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Column(
+                    children: [
+                      _buildContentCard(
+                        title: item['title']!,
+                        date: item['date']!,
+                        category1: item['category1']!,
+                        category2: item['category2']!,
+                      ),
+                      const SizedBox(height: 20),
+                    ],
                   ),
-                ),
-              );
-            },
-            child: Column(
-              children: [
-                _buildContentCard(
-                  title: item['title']!,
-                  date: item['date']!,
-                  category1: item['category1']!,
-                  category2: item['category2']!,
-                ),
-                const SizedBox(height: 20),
-              ],
+                );
+              },
             ),
-          );
-        },
-      ),
     );
   }
 
