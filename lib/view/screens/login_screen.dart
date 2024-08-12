@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,34 +15,35 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  String _errorMessage = ''; // 에러 메시지 상태를 저장할 변수
+  String _errorMessage = '';
 
+  @override
   @override
   void initState() {
     super.initState();
+
     KakaoSdk.init(
-        nativeAppKey: 'a992f248ec54d8a88ff00f88d7425feb'); // 카카오 SDK 초기화
+      nativeAppKey: 'a992f248ec54d8a88ff00f88d7425feb',
+      javaScriptAppKey: '4a74843fd13336d98e21499d3a256135',
+    );
   }
 
   Future<void> _login() async {
     final String email = _emailController.text;
     final String password = _passwordController.text;
 
-    // 테스트용 계정과 비밀번호 확인
     if (email == 'test' && password == 'test') {
-      // 백엔드 없이 임시로 테스트용 토큰을 저장하고 메인 페이지로 이동
       await _saveJwtToken('dummy_test_token');
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => CategorySelectScreen()),
       );
-      return; // 메인 페이지로 이동 후 이 메서드를 종료
+      return;
     }
 
-    // 실제 백엔드가 구현되면 아래 코드가 실행되도록 남겨둡니다.
     try {
       final response = await http.post(
-        Uri.parse('https://your-backend-api.com/login'), // 백엔드 로그인 API 주소
+        Uri.parse('https://your-backend-api.com/login'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -55,68 +55,95 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        await _saveJwtToken(responseData['token']); // JWT 토큰 저장
+        await _saveJwtToken(responseData['token']);
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-              builder: (context) => CategorySelectScreen()), // 메인 화면으로 이동
+          MaterialPageRoute(builder: (context) => CategorySelectScreen()),
         );
       } else {
         setState(() {
-          _errorMessage = '아이디와 비밀번호가 일치하지 않습니다.'; // 에러 메시지 설정
+          _errorMessage = '아이디와 비밀번호가 일치하지 않습니다.';
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = '로그인 중 오류가 발생했습니다. 다시 시도해주세요.'; // 에러 메시지 설정
+        _errorMessage = '로그인 중 오류가 발생했습니다. 다시 시도해주세요.';
       });
     }
   }
 
   Future<void> _loginWithKakao() async {
-    if (await isKakaoTalkInstalled()) {
-      try {
-        // 카카오톡이 설치되어 있으면 카카오톡으로 로그인
-        await UserApi.instance.loginWithKakaoTalk();
+    try {
+      OAuthToken token;
+      if (await isKakaoTalkInstalled()) {
+        // 카카오톡 앱을 통해 로그인
+        token = await UserApi.instance.loginWithKakaoTalk();
+      } else {
+        // 카카오 계정 웹뷰로 로그인
+        token = await UserApi.instance.loginWithKakaoAccount();
+      }
+
+      // 로그인 성공 후 사용자 정보 가져오기
+      User user = await UserApi.instance.me();
+      String? nickname = user.kakaoAccount?.profile?.nickname;
+      String? email = user.kakaoAccount?.email;
+      String? id = user.id.toString();
+
+      print('닉네임: $nickname');
+      print('이메일: $email');
+      print("회원번호: $id");
+
+      if (nickname != null && email != null && id != null) {
+        await _registerUser(nickname, email, id);
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-              builder: (context) => CategorySelectScreen()), // 메인 화면으로 이동
+          MaterialPageRoute(builder: (context) => CategorySelectScreen()),
         );
-      } catch (error) {
-        if (error is PlatformException && error.code == 'CANCELED') {
-          return; // 사용자가 로그인 취소한 경우 처리
-        }
-        try {
-          // 카카오톡 로그인 실패 시, 카카오 계정으로 로그인 시도
-          await UserApi.instance.loginWithKakaoAccount();
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-                builder: (context) => CategorySelectScreen()), // 메인 화면으로 이동
-          );
-        } catch (error) {
-          print('카카오계정으로 로그인 실패 $error'); // 오류 메시지 출력
-        }
+      } else {
+        setState(() {
+          _errorMessage = '카카오에서 사용자 정보를 가져올 수 없습니다.';
+        });
       }
-    } else {
-      try {
-        // 카카오톡이 설치되어 있지 않으면 카카오 계정으로 로그인
-        await UserApi.instance.loginWithKakaoAccount();
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-              builder: (context) => CategorySelectScreen()), // 메인 화면으로 이동
-        );
-      } catch (error) {
-        print('카카오계정으로 로그인 실패 $error'); // 오류 메시지 출력
+    } catch (error) {
+      setState(() {
+        _errorMessage = '카카오 로그인 중 오류가 발생했습니다.';
+      });
+      print('카카오 로그인 실패: $error');
+    }
+  }
+
+  Future<void> _registerUser(String nickname, String email, String id) async {
+    try {
+      final response = await http.post(
+        Uri.parse('https://your-backend-api.com/register'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{
+          'nickname': nickname,
+          'email': email,
+          'id': id, // 회원번호를 포함하여 전송
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        await _saveJwtToken(responseData['token']);
+      } else {
+        setState(() {
+          _errorMessage = '회원가입 중 오류가 발생했습니다.';
+        });
       }
+    } catch (e) {
+      setState(() {
+        _errorMessage = '회원가입 중 오류가 발생했습니다.';
+      });
     }
   }
 
   Future<void> _saveJwtToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('jwt_token', token); // JWT 토큰을 로컬에 저장
+    await prefs.setString('jwt_token', token);
   }
 
   @override
@@ -153,7 +180,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     children: [
                       if (_errorMessage.isNotEmpty) ...[
-                        // 에러 메시지 표시
                         Text(
                           _errorMessage,
                           style: TextStyle(
@@ -186,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       SizedBox(height: 20),
                       GestureDetector(
-                        onTap: _login, // 로그인 시도
+                        onTap: _login,
                         child: Container(
                           width: double.infinity,
                           height: 50,
@@ -214,7 +240,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                 ),
-                // 하단 소셜 로그인 및 기타 항목
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -230,12 +255,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       SizedBox(height: 15),
                       GestureDetector(
-                        onTap: _loginWithKakao, // 카카오톡 로그인 시도
+                        onTap: _loginWithKakao,
                         child: Container(
                           width: double.infinity,
                           height: 50,
                           decoration: BoxDecoration(
-                            color: Color(0xFFF7E300), // 카카오톡 노란색
+                            color: Color(0xFFF7E300),
                             borderRadius: BorderRadius.circular(5),
                             border: Border.all(
                               width: 1,
@@ -246,7 +271,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: Text(
                               '카카오톡으로 로그인하기',
                               style: TextStyle(
-                                color: Colors.black, // 카카오톡 로고 색상
+                                color: Colors.black,
                                 fontSize: 15,
                                 fontFamily: 'Gmarket Sans',
                                 fontWeight: FontWeight.w400,

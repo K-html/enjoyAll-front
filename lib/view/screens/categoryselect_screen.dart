@@ -131,7 +131,7 @@ class _CategorySelectScreenState extends State<CategorySelectScreen> {
               child: Text('확인'),
               style: ElevatedButton.styleFrom(
                 minimumSize: Size(double.infinity, 50),
-                primary: Color(0xFF4051E8),
+                backgroundColor: Color(0xFF4051E8),
               ),
             ),
           ),

@@ -45,5 +45,14 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>kakaoa992f248ec54d8a88ff00f88d7425feb</string> <!-- 중괄호 제거 -->
+            </array>
+        </dict>
+    </array>
 </dict>
 </plist>

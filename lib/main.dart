@@ -3,7 +3,10 @@ import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 import 'package:khtml_hackathon_fe/view/screens/splash_screen.dart';
 
 void main() {
-  KakaoSdk.init(nativeAppKey: 'a992f248ec54d8a88ff00f88d7425feb');
+  KakaoSdk.init(
+    nativeAppKey: 'a992f248ec54d8a88ff00f88d7425feb',
+    javaScriptAppKey: '4a74843fd13336d98e21499d3a256135',
+  );
   runApp(const FigmaToCodeApp());
 }
 
