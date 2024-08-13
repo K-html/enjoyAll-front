@@ -6,6 +6,8 @@ import 'package:flutter/rendering.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../util/recording.dart';
+
 class ChatMessage {
   final String text;
   final bool isUser;
@@ -123,6 +125,19 @@ class _ChatScreenState extends State<ChatScreen> {
   void _resumeAutoScroll() {
     if (!_isAutoScrolling && _messages.isEmpty) {
       _startAutoScroll();
+    }
+  }
+
+  void _openRecordingScreen() async {
+    final response = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => RecordingScreen()),
+    );
+
+    if (response != null) {
+      setState(() {
+        _messages.add(ChatMessage(text: response, isUser: false));
+      });
     }
   }
 
@@ -391,7 +406,10 @@ class _ChatScreenState extends State<ChatScreen> {
                               ),
                             ),
                           ),
-                          Icon(Icons.mic, color: Colors.grey),
+                          IconButton(
+                            icon: Icon(Icons.mic, color: Colors.grey),
+                            onPressed: _openRecordingScreen, // 녹음 화면 열기
+                          ),
                         ],
                       ),
                     ),
