@@ -153,22 +153,19 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       // 서버에 요청을 보냅니다.
       final response = await http.post(
-        Uri.parse('http://175.45.205.178/chat'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'query': text}),
+        Uri.parse('http://34.80.200.9:8000/chat/text'),
+        headers: {'Content-Type': 'application/json; charset=UTF-8'},
+        body: jsonEncode({'input_text': text}),
       );
 
       if (response.statusCode == 200) {
-        final responseBody = response.body;
+        // 응답을 UTF-8로 처리
+        final responseBody = utf8.decode(response.bodyBytes);
         debugPrint('Server response: $responseBody');
 
-        final responseData = jsonDecode(responseBody);
-
-        // 중첩된 JSON 파싱
-        final nestedMessage = jsonDecode(responseData['message']);
-
-        final botResponse =
-            nestedMessage['message'] as String? ?? '서버 응답이 없습니다.';
+        // 서버로부터 받은 응답을 단순 텍스트로 처리
+        final decodedResponse = jsonDecode(responseBody);
+        final botResponse = decodedResponse['response'] ?? '서버 응답이 없습니다.';
 
         setState(() {
           _messages.add(ChatMessage(text: botResponse, isUser: false));

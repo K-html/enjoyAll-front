@@ -13,13 +13,16 @@ class RecordingScreen extends StatefulWidget {
 
 class _RecordingScreenState extends State<RecordingScreen> {
   final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
+  final FlutterSoundPlayer _player = FlutterSoundPlayer();
   bool _isRecording = false;
+  bool _isPlaying = false;
   String? _filePath;
 
   @override
   void initState() {
     super.initState();
     _initRecorder();
+    _initPlayer();
   }
 
   Future<void> _initRecorder() async {
@@ -27,9 +30,14 @@ class _RecordingScreenState extends State<RecordingScreen> {
     await _recorder.openRecorder();
   }
 
+  Future<void> _initPlayer() async {
+    await _player.openPlayer();
+  }
+
   @override
   void dispose() {
     _recorder.closeRecorder();
+    _player.closePlayer();
     super.dispose();
   }
 
@@ -40,7 +48,7 @@ class _RecordingScreenState extends State<RecordingScreen> {
     try {
       await _recorder.startRecorder(
         toFile: tempPath,
-        codec: Codec.pcm16WAV, // PCM Wave 형식으로 녹음
+        codec: Codec.pcm16WAV,
       );
 
       setState(() {
@@ -49,7 +57,6 @@ class _RecordingScreenState extends State<RecordingScreen> {
       });
     } catch (e) {
       print('Recorder error: $e');
-      // 오류 처리
     }
   }
 
@@ -59,30 +66,56 @@ class _RecordingScreenState extends State<RecordingScreen> {
     setState(() {
       _isRecording = false;
     });
+  }
 
-    if (_filePath != null) {
-      _sendRecording(_filePath!);
+  Future<void> _playRecording() async {
+    if (_filePath != null && !_isPlaying) {
+      try {
+        await _player.startPlayer(
+          fromURI: _filePath,
+          codec: Codec.pcm16WAV,
+          whenFinished: () {
+            setState(() {
+              _isPlaying = false;
+            });
+          },
+        );
+
+        setState(() {
+          _isPlaying = true;
+        });
+      } catch (e) {
+        print('Player error: $e');
+      }
+    } else if (_isPlaying) {
+      await _player.stopPlayer();
+      setState(() {
+        _isPlaying = false;
+      });
     }
   }
 
-  Future<void> _sendRecording(String filePath) async {
-    try {
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('http://175.45.205.178/chat'),
-      );
+  Future<void> _sendRecording() async {
+    if (_filePath != null) {
+      try {
+        var request = http.MultipartRequest(
+          'POST',
+          Uri.parse('http://175.45.205.178/chat'),
+        );
 
-      request.files.add(await http.MultipartFile.fromPath('file', filePath));
-      var response = await request.send();
+        request.files
+            .add(await http.MultipartFile.fromPath('file', _filePath!));
+        var response = await request.send();
 
-      if (response.statusCode == 200) {
-        var responseData = await response.stream.bytesToString();
-        Navigator.pop(context, responseData); // 응답 데이터를 전달
-      } else {
-        Navigator.pop(context, '녹음 전송에 실패했습니다.');
+        if (response.statusCode == 200) {
+          var responseData = await response.stream.bytesToString();
+          Navigator.pop(context, responseData); // 응답 데이터를 전달
+        } else {
+          Navigator.pop(context, '녹음 전송에 실패했습니다.');
+        }
+      } catch (e) {
+        Navigator.pop(context, '오류가 발생했습니다: $e');
       }
-    } catch (e) {
-      Navigator.pop(context, '오류가 발생했습니다: $e');
     }
   }
 
@@ -126,6 +159,35 @@ class _RecordingScreenState extends State<RecordingScreen> {
                   fontFamily: 'GmarketSansTTFBold',
                   fontWeight: FontWeight.w500,
                 ),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _playRecording,
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: _isPlaying ? Colors.red : Colors.blue,
+                  // 텍스트 색상
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text(_isPlaying ? '재생 중지' : '녹음된 파일 재생'),
+              ),
+
+// 서버로 전송 버튼
+              ElevatedButton(
+                onPressed: _sendRecording,
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.green,
+                  // 텍스트 색상
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text('서버로 전송'),
               ),
             ],
           ),
