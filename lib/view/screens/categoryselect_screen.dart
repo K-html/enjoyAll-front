@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'main_screen.dart';
 
 class CategorySelectScreen extends StatefulWidget {
+  final Function(String) onKeywordSelected;
+
+  CategorySelectScreen({required this.onKeywordSelected});
+
   @override
   _CategorySelectScreenState createState() => _CategorySelectScreenState();
 }
 
 class _CategorySelectScreenState extends State<CategorySelectScreen> {
-  Set<String> selectedCategories = {}; // 선택된 카테고리들
+  Set<String> selectedCategories = {};
+  String _errorMessage = '';
 
-  // 카테고리 정보
   final List<Map<String, dynamic>> categories = [
     {'name': '저소득복지', 'icon': Icons.volunteer_activism},
     {'name': '보훈대상자', 'icon': Icons.military_tech},
@@ -24,18 +27,20 @@ class _CategorySelectScreenState extends State<CategorySelectScreen> {
     {'name': '주거복지', 'icon': Icons.house},
   ];
 
-  Future<void> _saveSelectedCategories() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> selectedList = selectedCategories.toList();
-    await prefs.setStringList('selectedCategories', selectedList);
-  }
+  void _onConfirm() {
+    if (selectedCategories.isNotEmpty) {
+      String selectedKeyword = selectedCategories.first;
+      widget.onKeywordSelected(selectedKeyword);
 
-  void _onConfirm() async {
-    await _saveSelectedCategories();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => MainScreen()),
-    );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MainScreen()),
+      );
+    } else {
+      setState(() {
+        _errorMessage = '카테고리를 하나 이상 선택해주세요.';
+      });
+    }
   }
 
   @override
@@ -57,6 +62,18 @@ class _CategorySelectScreenState extends State<CategorySelectScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
+          if (_errorMessage.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                _errorMessage,
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -103,13 +120,13 @@ class _CategorySelectScreenState extends State<CategorySelectScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            category['icon'], // 아이콘 사용
+                            category['icon'],
                             size: 48,
                             color: isSelected ? Colors.white : Colors.black,
                           ),
                           SizedBox(height: 8),
                           Text(
-                            category['name']!,
+                            category['name'],
                             style: TextStyle(
                               color: isSelected ? Colors.white : Colors.black,
                               fontSize: 14,

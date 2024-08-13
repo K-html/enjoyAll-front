@@ -34,12 +34,14 @@ class _MainScreenState extends State<MainScreen> {
   final PageController _pageController = PageController();
   List<Map<String, String>> _favorites = [];
   Set<String> selectedCategories = {};
+  String? _nickname; // 닉네임 변수 추가
 
   @override
   void initState() {
     super.initState();
     _loadFavorites();
     _loadSelectedCategories();
+    _loadNickname(); // 닉네임 로드
   }
 
   Future<void> _loadFavorites() async {
@@ -52,6 +54,14 @@ class _MainScreenState extends State<MainScreen> {
             .toList();
       });
     }
+  }
+
+  Future<void> _loadNickname() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _nickname = prefs.getString('nickname') ?? 'User';
+      print('Nickname loaded: $_nickname'); // 불러오기 확인 로그
+    });
   }
 
   Future<void> _loadSelectedCategories() async {
@@ -90,7 +100,10 @@ class _MainScreenState extends State<MainScreen> {
           ),
           ChatScreen(onBack: _onBackFromChat),
           FavoriteScreen(favorites: _favorites),
-          MyPageScreen(nickname: 'User', email: 'user@example.com'),
+          MyPageScreen(
+            email: 'user@example.com',
+            initialNickname: _nickname ?? 'User', // 저장된 닉네임 전달
+          ),
         ],
       ),
       bottomNavigationBar: _selectedIndex == 1
@@ -384,7 +397,7 @@ class _MobileState extends State<Mobile> {
                       widget.selectedCategories.add(category);
                     }
 
-                    _saveSelectedCategories();  // 변경된 카테고리를 저장
+                    _saveSelectedCategories(); // 변경된 카테고리를 저장
 
                     // 선택된 카테고리 목록을 출력
                     print('Selected Categories: ${widget.selectedCategories}');
@@ -397,7 +410,6 @@ class _MobileState extends State<Mobile> {
       ),
     );
   }
-
 
   Widget _buildContentSection() {
     return ListView.builder(

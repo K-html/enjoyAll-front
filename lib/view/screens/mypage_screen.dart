@@ -6,8 +6,10 @@ import 'login_screen.dart';
 // MyPageScreen: 사용자 정보 화면
 class MyPageScreen extends StatefulWidget {
   final String email; // 사용자 이메일
+  final String initialNickname; // 로그인 시 받아온 초기 닉네임
 
-  MyPageScreen({required this.email, required String nickname});
+  // 수정된 생성자
+  MyPageScreen({required this.email, required this.initialNickname});
 
   @override
   _MyPageScreenState createState() => _MyPageScreenState();
@@ -23,10 +25,24 @@ class _MyPageScreenState extends State<MyPageScreen> {
   }
 
   Future<void> _loadNickname() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _nickname = prefs.getString('nickname') ?? 'User';
-    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      String? loadedNickname = prefs.getString('nickname');
+
+      if (loadedNickname == null) {
+        print('Nickname not found, using default value "User".');
+        loadedNickname = 'User';
+      }
+
+      // _nickname 변수에 닉네임 할당
+      setState(() {
+        _nickname = loadedNickname!;
+      });
+
+      print('Nickname loaded: $loadedNickname');
+    } catch (e) {
+      print('Failed to load nickname: $e');
+    }
   }
 
   Future<void> _logout() async {

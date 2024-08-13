@@ -6,6 +6,7 @@ import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'categoryselect_screen.dart';
+import 'main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -13,62 +14,33 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
   String _errorMessage = '';
+  String? _email;
+  String? _id;
+  String? _nickname;
 
-  @override
   @override
   void initState() {
     super.initState();
-
     KakaoSdk.init(
       nativeAppKey: 'a992f248ec54d8a88ff00f88d7425feb',
       javaScriptAppKey: '4a74843fd13336d98e21499d3a256135',
     );
   }
 
-  Future<void> _login() async {
-    final String email = _emailController.text;
-    final String password = _passwordController.text;
+  Future<void> _saveJwtTokens(String accessToken, String refreshToken) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('jwt_access_token', accessToken);
+    await prefs.setString('jwt_refresh_token', refreshToken);
+  }
 
-    if (email == 'test' && password == 'test') {
-      await _saveJwtToken('dummy_test_token');
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => CategorySelectScreen()),
-      );
-      return;
-    }
-
+  Future<void> _saveNickname(String nickname) async {
     try {
-      final response = await http.post(
-        Uri.parse('https://your-backend-api.com/login'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(<String, String>{
-          'email': email,
-          'password': password,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        await _saveJwtToken(responseData['token']);
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => CategorySelectScreen()),
-        );
-      } else {
-        setState(() {
-          _errorMessage = '아이디와 비밀번호가 일치하지 않습니다.';
-        });
-      }
+      final prefs = await SharedPreferences.getInstance();
+      bool isSaved = await prefs.setString('nickname', nickname);
+      print('Nickname saved: $nickname, Result: $isSaved');
     } catch (e) {
-      setState(() {
-        _errorMessage = '로그인 중 오류가 발생했습니다. 다시 시도해주세요.';
-      });
+      print('Failed to save nickname: $e');
     }
   }
 
@@ -76,30 +48,77 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       OAuthToken token;
       if (await isKakaoTalkInstalled()) {
-        // 카카오톡 앱을 통해 로그인
         token = await UserApi.instance.loginWithKakaoTalk();
       } else {
-        // 카카오 계정 웹뷰로 로그인
         token = await UserApi.instance.loginWithKakaoAccount();
       }
 
-      // 로그인 성공 후 사용자 정보 가져오기
       User user = await UserApi.instance.me();
-      String? nickname = user.kakaoAccount?.profile?.nickname;
-      String? email = user.kakaoAccount?.email;
-      String? id = user.id.toString();
+      _email = user.kakaoAccount?.email;
+      _id = user.id.toString();
+      _nickname = user.kakaoAccount?.profile?.nickname;
 
-      print('닉네임: $nickname');
-      print('이메일: $email');
-      print("회원번호: $id");
+      print('이메일: $_email');
+      print('회원번호: $_id');
+      print('닉네임: $_nickname');
 
-      if (nickname != null && email != null && id != null) {
-        await _registerUser(nickname, email, id);
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => CategorySelectScreen()),
-        );
+      if (_email != null && _id != null && _nickname != null) {
+        final result = await _checkUserStatus(_id!, _email!);
+
+        print('result 타입: ${result.runtimeType}');
+        print('result 값: $result');
+
+        if (result is Map<String, dynamic>) {
+          print('Map 타입의 result 반환.');
+          final tokens = Map<String, String>.from(result);
+
+          // JWT 토큰을 Map에서 직접 접근하여 사용합니다.
+          final jwtAccessToken = tokens['#jwtAccessToken'];
+          final jwtRefreshToken = tokens['#jwtRefreshToken'];
+
+          if (jwtAccessToken != null && jwtRefreshToken != null) {
+            await _saveJwtTokens(jwtAccessToken, jwtRefreshToken);
+          } else {
+            print('JWT 토큰이 null입니다.');
+            setState(() {
+              _errorMessage = 'JWT 토큰이 유효하지 않습니다.';
+            });
+            return;
+          }
+
+          if (_nickname != null) {
+            await _saveNickname(_nickname!);
+          } else {
+            print('닉네임이 null입니다. 저장할 수 없습니다.');
+          }
+          await _saveNickname(_nickname!);
+          print('메인 페이지로 이동합니다.3');
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => MainScreen()),
+          );
+          return; // 추가적인 코드 실행을 방지하기 위해 return
+        } else if (result is int) {
+          print('int 타입의 result 반환.');
+          int userId = result;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CategorySelectScreen(
+                onKeywordSelected: (selectedKeyword) =>
+                    _onKeywordSelected(selectedKeyword, userId, _nickname!),
+              ),
+            ),
+          );
+          return; // 추가적인 코드 실행을 방지하기 위해 return
+        } else {
+          print('예상치 못한 result 타입: ${result.runtimeType}');
+          setState(() {
+            _errorMessage = '사용자 상태 확인 중 오류가 발생했습니다.';
+          });
+        }
       } else {
+        print('카카오 사용자 정보가 null로 반환되었습니다.');
         setState(() {
           _errorMessage = '카카오에서 사용자 정보를 가져올 수 없습니다.';
         });
@@ -112,38 +131,122 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _registerUser(String nickname, String email, String id) async {
+  Future<void> _onKeywordSelected(
+      String selectedKeyword, int userId, String nickname) async {
+    print('서버로 전달될 selectedKeyword: $selectedKeyword'); // 로그 추가
+    final joinSuccess =
+        await _joinUser(userId.toString(), nickname, selectedKeyword);
+    if (mounted) {
+      if (joinSuccess) {
+        await _saveNickname(_nickname!);
+        print('메인 페이지로 이동합니다.');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => MainScreen()),
+        );
+      } else {
+        setState(() {
+          _errorMessage = '회원가입 중 오류가 발생했습니다. 다시 시도해주세요.';
+        });
+      }
+    }
+  }
+
+  Future<dynamic> _checkUserStatus(String id, String email) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      String? jwtAccessToken = prefs.getString('jwt_access_token');
+
+      final response = await http.post(
+        Uri.parse('http://175.45.205.178/auth/kakao'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': 'Bearer $jwtAccessToken',
+        },
+        body: jsonEncode(<String, String>{
+          '#socialId': id,
+          '#socialEmail': email,
+        }),
+      );
+
+      print('auth/kakao 응답 상태 코드: ${response.statusCode}');
+      print('auth/kakao 응답 본문: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+
+        if (responseData['result'] != null &&
+            responseData['result'] is Map<String, dynamic>) {
+          final tokens = responseData['result'];
+
+          await _saveJwtTokens(
+            tokens['#jwtAccessToken'],
+            tokens['#jwtRefreshToken'],
+          );
+          await _saveNickname(_nickname!);
+
+          print('메인 페이지로 이동합니다.2');
+          return tokens; // 정상적인 경우, tokens 반환
+        } else {
+          print('서버 응답에 예상하지 못한 데이터 구조.');
+          return 'unexpected_data'; // 명확한 오류 메시지 반환
+        }
+      } else if (response.statusCode == 403) {
+        final responseData = jsonDecode(response.body);
+        if (responseData['result'] is int) {
+          return responseData['result']; // 예상된 결과
+        } else {
+          print('서버에서 예상하지 못한 데이터 형식을 반환했습니다.');
+          return 'unexpected_format'; // 명확한 오류 메시지 반환
+        }
+      } else {
+        print('예상하지 못한 상태 코드: ${response.statusCode}');
+        return 'unexpected_status'; // 명확한 오류 메시지 반환
+      }
+    } catch (e) {
+      print('auth/kakao 요청 오류: $e');
+      return 'request_error'; // 명확한 오류 메시지 반환
+    }
+  }
+
+  Future<bool> _joinUser(String userId, String nickname, String keyword) async {
+    print('서버로 전송될 keyword: $keyword');
+
     try {
       final response = await http.post(
-        Uri.parse('https://your-backend-api.com/register'),
+        Uri.parse('http://175.45.205.178/auth/join'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
         body: jsonEncode(<String, String>{
-          'nickname': nickname,
-          'email': email,
-          'id': id, // 회원번호를 포함하여 전송
+          'userId': userId,
+          'socialName': nickname,
+          'keyword': keyword,
         }),
       );
 
+      print('auth/join 응답 상태 코드: ${response.statusCode}');
+      print('auth/join 응답 본문: ${response.body}');
+
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        await _saveJwtToken(responseData['token']);
+        if (responseData['result'] != null) {
+          await _saveJwtTokens(
+            responseData['result']['#jwtAccessToken'],
+            responseData['result']['#jwtRefreshToken'],
+          );
+          return true;
+        } else {
+          print('auth/join 응답 데이터가 null입니다.');
+          return false;
+        }
       } else {
-        setState(() {
-          _errorMessage = '회원가입 중 오류가 발생했습니다.';
-        });
+        return false;
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = '회원가입 중 오류가 발생했습니다.';
-      });
+      print('auth/join 요청 오류: $e');
+      return false;
     }
-  }
-
-  Future<void> _saveJwtToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('jwt_token', token);
   }
 
   @override
@@ -175,162 +278,46 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Column(
-                    children: [
-                      if (_errorMessage.isNotEmpty) ...[
-                        Text(
-                          _errorMessage,
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontSize: 14,
-                            fontFamily: 'Gmarket Sans',
-                          ),
-                        ),
-                        SizedBox(height: 10),
-                      ],
-                      TextField(
-                        controller: _emailController,
-                        decoration: InputDecoration(
-                          hintText: '이메일을 입력하세요',
-                          border: OutlineInputBorder(),
-                          contentPadding:
-                              EdgeInsets.symmetric(horizontal: 12.0),
-                        ),
+                if (_errorMessage.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Text(
+                      _errorMessage,
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 14,
+                        fontFamily: 'Gmarket Sans',
                       ),
-                      SizedBox(height: 20),
-                      TextField(
-                        controller: _passwordController,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          hintText: '비밀번호를 입력하세요',
-                          border: OutlineInputBorder(),
-                          contentPadding:
-                              EdgeInsets.symmetric(horizontal: 12.0),
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      GestureDetector(
-                        onTap: _login,
-                        child: Container(
-                          width: double.infinity,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: Colors.black,
-                            borderRadius: BorderRadius.circular(5),
-                            border: Border.all(
-                              width: 1,
-                              color: Color(0xFF555454),
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              '로그인하기',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontFamily: 'Gmarket Sans',
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      Text(
-                        'SNS계정으로 로그인하기',
+                SizedBox(height: 20),
+                GestureDetector(
+                  onTap: _loginWithKakao,
+                  child: Container(
+                    width: double.infinity,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF7E300),
+                      borderRadius: BorderRadius.circular(5),
+                      border: Border.all(
+                        width: 1,
+                        color: Color(0xFF555454),
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '카카오톡으로 로그인하기',
                         style: TextStyle(
-                          color: Color(0xFF1E1E1E),
+                          color: Colors.black,
                           fontSize: 15,
                           fontFamily: 'Gmarket Sans',
                           fontWeight: FontWeight.w400,
                         ),
                       ),
-                      SizedBox(height: 15),
-                      GestureDetector(
-                        onTap: _loginWithKakao,
-                        child: Container(
-                          width: double.infinity,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: Color(0xFFF7E300),
-                            borderRadius: BorderRadius.circular(5),
-                            border: Border.all(
-                              width: 1,
-                              color: Color(0xFF555454),
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              '카카오톡으로 로그인하기',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 15,
-                                fontFamily: 'Gmarket Sans',
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 15),
-                      Container(
-                        width: double.infinity,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            width: 1,
-                            color: Color(0xFF555454),
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '계정이 없으신가요? 간편가입하기',
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 15,
-                              fontFamily: 'Gmarket Sans',
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Text(
-                            '아이디 (이메일) 찾기',
-                            style: TextStyle(
-                              color: Color(0xFF636060),
-                              fontSize: 12,
-                              fontFamily: 'Gmarket Sans',
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                          Text(
-                            '비밀번호 찾기',
-                            style: TextStyle(
-                              color: Color(0xFF636060),
-                              fontSize: 12,
-                              fontFamily: 'Gmarket Sans',
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                    ),
                   ),
                 ),
+                SizedBox(height: 15),
               ],
             ),
           ),
