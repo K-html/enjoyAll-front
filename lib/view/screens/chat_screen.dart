@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ChatMessage {
@@ -27,7 +29,7 @@ class _ChatScreenState extends State<ChatScreen> {
   late Timer _scrollTimer;
   Timer? _userScrollTimer;
 
-  double _fontSize = 16.0; // 기본 폰트 크기 설정
+  double _fontSize = 16.0;
 
   final List<Map<String, dynamic>> categories = [
     {'name': '저소득복지', 'icon': Icons.volunteer_activism},
@@ -47,7 +49,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
 
-    _loadFontSize(); // 폰트 크기 로드
+    _loadFontSize();
 
     if (_messages.isEmpty) {
       _startAutoScroll();
@@ -56,12 +58,10 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollController.addListener(() {
       if (_scrollController.position.userScrollDirection !=
           ScrollDirection.idle) {
-        _stopAutoScroll(); // 사용자가 스크롤하면 애니메이션 중지
+        _stopAutoScroll();
 
-        // 기존 타이머 취소
         _userScrollTimer?.cancel();
 
-        // 3초 후 자동 스크롤 재개
         _userScrollTimer = Timer(Duration(seconds: 3), () {
           if (_messages.isEmpty) {
             _resumeAutoScroll();
@@ -83,7 +83,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _loadFontSize() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      _fontSize = prefs.getDouble('fontSize') ?? 16.0; // 기본값은 16.0
+      _fontSize = prefs.getDouble('fontSize') ?? 16.0;
     });
   }
 
@@ -99,7 +99,6 @@ class _ChatScreenState extends State<ChatScreen> {
         double currentScrollPosition = _scrollController.position.pixels;
 
         if (currentScrollPosition >= maxScrollExtent) {
-          // 자연스러운 반복을 위해 살짝 앞으로 이동
           _scrollController.jumpTo(currentScrollPosition - maxScrollExtent);
         } else {
           _scrollController.animateTo(
@@ -127,17 +126,52 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  void _sendMessage(String text) {
+  Future<void> _sendMessage(String text) async {
     if (text.isEmpty) return;
 
     setState(() {
       _messages.add(ChatMessage(text: text, isUser: true));
-      _messages.add(ChatMessage(text: 'AI 응답: $text', isUser: false));
     });
 
     _controller.clear();
 
-    // 메시지 전송 후 바로 맨 아래로 스크롤
+    try {
+      // 서버에 요청을 보냅니다.
+      final response = await http.post(
+        Uri.parse('http://175.45.205.178/chat'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'query': text}),
+      );
+
+      if (response.statusCode == 200) {
+        final responseBody = response.body;
+        debugPrint('Server response: $responseBody');
+
+        final responseData = jsonDecode(responseBody);
+
+        // 중첩된 JSON 파싱
+        final nestedMessage = jsonDecode(responseData['message']);
+
+        final botResponse =
+            nestedMessage['message'] as String? ?? '서버 응답이 없습니다.';
+
+        setState(() {
+          _messages.add(ChatMessage(text: botResponse, isUser: false));
+        });
+      } else {
+        setState(() {
+          _messages.add(ChatMessage(text: '오류가 발생했습니다.', isUser: false));
+        });
+        debugPrint(
+            'Server error: ${response.statusCode} - ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      debugPrint('Connection error: $e');
+      setState(() {
+        _messages.add(ChatMessage(text: '서버에 연결할 수 없습니다.', isUser: false));
+      });
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.jumpTo(
@@ -184,9 +218,9 @@ class _ChatScreenState extends State<ChatScreen> {
             TextButton(
               child: Text('확인'),
               onPressed: () {
-                _saveFontSize(_fontSize); // 폰트 크기 저장
+                _saveFontSize(_fontSize);
                 Navigator.of(context).pop();
-                setState(() {}); // 폰트 크기를 업데이트
+                setState(() {});
               },
             ),
           ],
@@ -264,15 +298,14 @@ class _ChatScreenState extends State<ChatScreen> {
                           controller: _scrollController,
                           scrollDirection: Axis.horizontal,
                           padding: const EdgeInsets.symmetric(vertical: 20.0),
-                          itemCount: categories.length * 100, // 리스트를 충분히 반복
+                          itemCount: categories.length * 100,
                           itemBuilder: (context, index) {
                             final category =
                                 categories[index % categories.length];
                             return GestureDetector(
                               behavior: HitTestBehavior.translucent,
                               onTap: () {
-                                _sendCategoryMessage(
-                                    category['name']); // 메시지 전송
+                                _sendCategoryMessage(category['name']);
                               },
                               child: Padding(
                                 padding:
@@ -313,7 +346,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           child: Text(
                             message.text,
                             style: TextStyle(
-                              fontSize: _fontSize, // 폰트 크기 적용
+                              fontSize: _fontSize,
                               color: message.isUser
                                   ? Colors.white
                                   : Colors.black54,
@@ -352,8 +385,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 hintStyle: TextStyle(color: Colors.black),
                                 border: InputBorder.none,
                               ),
-                              style: TextStyle(
-                                  fontSize: _fontSize), // 텍스트 필드 폰트 크기 적용
+                              style: TextStyle(fontSize: _fontSize),
                             ),
                           ),
                           Icon(Icons.mic, color: Colors.grey),
