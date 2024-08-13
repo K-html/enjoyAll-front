@@ -266,76 +266,95 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 32.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 63),
-                  child: Column(
-                    children: [
-                      FlutterLogo(size: 24),
-                      SizedBox(height: 20),
-                      Text(
-                        'LOGIN',
-                        style: TextStyle(
-                          color: Color(0xFF1E1E1E),
-                          fontSize: 20,
-                          fontFamily: 'Gmarket Sans',
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (_errorMessage.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Text(
-                      _errorMessage,
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontSize: 14,
-                        fontFamily: 'Gmarket Sans',
-                      ),
-                    ),
-                  ),
-                SizedBox(height: 20),
-                GestureDetector(
-                  onTap: _loginWithKakao,
-                  child: Container(
-                    width: double.infinity,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: Color(0xFFF7E300),
-                      borderRadius: BorderRadius.circular(5),
-                      border: Border.all(
-                        width: 1,
-                        color: Color(0xFF555454),
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        '카카오톡으로 로그인하기',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 15,
-                          fontFamily: 'Gmarket Sans',
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 15),
-              ],
+      backgroundColor: const Color(0xFFFFFFFF),
+      body: Stack(
+        children: [
+          Positioned(
+            top: -50,
+            left: -70,
+            child: Text(
+              'D',
+              style: TextStyle(
+                fontSize: 400,
+                color: Colors.blue.withOpacity(0.3), // 반투명하게 설정
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-        ),
+          Positioned(
+            bottom: -50,
+            right: -70,
+            child: Text(
+              'A',
+              style: TextStyle(
+                fontSize: 400,
+                color: Colors.blue.withOpacity(0.3), // 반투명하게 설정
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          Positioned(
+            top: 200, // 원하는 위치로 조정
+            left: 32,
+            right: 32,
+            child: RichText(
+              textAlign: TextAlign.left,
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: '다누려 ',
+                    style: TextStyle(
+                        color: Colors.indigoAccent,
+                        fontSize: 32,
+                        fontFamily: 'GmarketSansTTFBold'),
+                  ),
+                  TextSpan(
+                    text: '서비스에 오신걸 환영합니다',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 32,
+                      fontFamily: 'GmarketSansTTFBold',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 100,
+            left: 16,
+            right: 16,
+            child: GestureDetector(
+              onTap: _loginWithKakao,
+              child: Container(
+                height: 50,
+                decoration: BoxDecoration(
+                  color: Color(0xFFF7E300),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/images/kakao_icon.png', // 카카오톡 아이콘 경로
+                      width: 24,
+                      height: 24,
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      '카카오 로그인',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

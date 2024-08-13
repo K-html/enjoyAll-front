@@ -60,7 +60,7 @@ dev_dependencies:
 flutter:
   assets:
     - assets/images/welcomescreen_image.jpg
-    - assets/images/welcomescreen_image.jpg
+    - assets/images/kakao_icon.png
 
   fonts:
     - family: GmarketSansTTFBold
