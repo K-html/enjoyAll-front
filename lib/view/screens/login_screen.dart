@@ -34,6 +34,12 @@ class _LoginScreenState extends State<LoginScreen> {
     await prefs.setString('jwt_refresh_token', refreshToken);
   }
 
+  Future<void> _saveEmail(String email) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('email', email);
+    print('Email saved: $email'); // 저장된 이메일 확인 로그
+  }
+
   Future<void> _saveNickname(String nickname) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -61,6 +67,10 @@ class _LoginScreenState extends State<LoginScreen> {
       print('이메일: $_email');
       print('회원번호: $_id');
       print('닉네임: $_nickname');
+
+      if (_email != null) {
+        await _saveEmail(_email!); // 이메일 저장
+      }
 
       if (_email != null && _id != null && _nickname != null) {
         final result = await _checkUserStatus(_id!, _email!);

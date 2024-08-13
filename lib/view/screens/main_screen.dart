@@ -35,13 +35,14 @@ class _MainScreenState extends State<MainScreen> {
   List<Map<String, String>> _favorites = [];
   Set<String> selectedCategories = {};
   String? _nickname; // 닉네임 변수 추가
+  String? _email;
 
   @override
   void initState() {
     super.initState();
     _loadFavorites();
     _loadSelectedCategories();
-    _loadNickname(); // 닉네임 로드
+    _loadUserInfo(); // 사용자 정보 로드
   }
 
   Future<void> _loadFavorites() async {
@@ -56,11 +57,13 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
-  Future<void> _loadNickname() async {
+  Future<void> _loadUserInfo() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
+      _email = prefs.getString('email');
       _nickname = prefs.getString('nickname') ?? 'User';
-      print('Nickname loaded: $_nickname'); // 불러오기 확인 로그
+      print('Nickname loaded: $_nickname');
+      print('Email loaded: $_email');
     });
   }
 
@@ -78,7 +81,11 @@ class _MainScreenState extends State<MainScreen> {
     setState(() {
       _selectedIndex = index;
     });
-    _pageController.jumpToPage(index);
+    _pageController.animateToPage(
+      index,
+      duration: Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
@@ -101,8 +108,8 @@ class _MainScreenState extends State<MainScreen> {
           ChatScreen(onBack: _onBackFromChat),
           FavoriteScreen(favorites: _favorites),
           MyPageScreen(
-            email: 'user@example.com',
-            initialNickname: _nickname ?? 'User', // 저장된 닉네임 전달
+            email: _email ?? 'user@example.com',
+            initialNickname: _nickname ?? 'User',
           ),
         ],
       ),
