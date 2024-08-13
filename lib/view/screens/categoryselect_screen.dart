@@ -34,7 +34,11 @@ class _CategorySelectScreenState extends State<CategorySelectScreen> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => MainScreen()),
+        MaterialPageRoute(
+          builder: (context) => MainScreen(
+            initialSelectedKeyword: selectedKeyword,
+          ),
+        ),
       );
     } else {
       setState(() {

@@ -152,7 +152,11 @@ class _LoginScreenState extends State<LoginScreen> {
         print('메인 페이지로 이동합니다.');
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => MainScreen()),
+          MaterialPageRoute(
+            builder: (context) => MainScreen(
+              initialSelectedKeyword: selectedKeyword, // 선택된 키워드를 전달
+            ),
+          ),
         );
       } else {
         setState(() {

@@ -25,6 +25,10 @@ class FigmaToCodeApp extends StatelessWidget {
 }
 
 class MainScreen extends StatefulWidget {
+  final String? initialSelectedKeyword; // 초기 선택된 키워드
+
+  MainScreen({this.initialSelectedKeyword});
+
   @override
   _MainScreenState createState() => _MainScreenState();
 }
@@ -33,8 +37,8 @@ class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
   final PageController _pageController = PageController();
   List<Map<String, String>> _favorites = [];
-  Set<String> selectedCategories = {};
-  String? _nickname; // 닉네임 변수 추가
+  Set<String> selectedCategories = {}; // 선택된 카테고리를 저장하는 변수
+  String? _nickname;
   String? _email;
 
   @override
@@ -42,7 +46,17 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
     _loadFavorites();
     _loadSelectedCategories();
-    _loadUserInfo(); // 사용자 정보 로드
+    _loadUserInfo();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.initialSelectedKeyword != null) {
+        setState(() {
+          selectedCategories.add(widget.initialSelectedKeyword!);
+        });
+      }
+      print("Initial Selected Keyword: ${widget.initialSelectedKeyword}");
+      print("Selected Categories After Addition: $selectedCategories");
+    });
   }
 
   Future<void> _loadFavorites() async {
@@ -62,8 +76,6 @@ class _MainScreenState extends State<MainScreen> {
     setState(() {
       _email = prefs.getString('email');
       _nickname = prefs.getString('nickname') ?? 'User';
-      print('Nickname loaded: $_nickname');
-      print('Email loaded: $_email');
     });
   }
 
@@ -506,6 +518,7 @@ class _MobileState extends State<Mobile> {
         child: Row(
           children: categories.map((category) {
             final isSelected = widget.selectedCategories.contains(category);
+            print("Category: $category, Is Selected: $isSelected");
             return Padding(
               padding: const EdgeInsets.only(right: 8),
               child: FilterChip(
@@ -527,11 +540,7 @@ class _MobileState extends State<Mobile> {
                     } else {
                       widget.selectedCategories.add(category);
                     }
-
                     _saveSelectedCategories(); // 변경된 카테고리를 저장
-
-                    // 선택된 카테고리 목록을 출력
-                    print('Selected Categories: ${widget.selectedCategories}');
                   });
                 },
               ),
@@ -543,11 +552,18 @@ class _MobileState extends State<Mobile> {
   }
 
   Widget _buildContentSection() {
+    final filteredData = widget.selectedCategories.isEmpty
+        ? data
+        : data.where((item) {
+            return widget.selectedCategories.contains(item['category1']) ||
+                widget.selectedCategories.contains(item['category2']);
+          }).toList();
+
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
-      itemCount: data.length,
+      itemCount: filteredData.length,
       itemBuilder: (context, index) {
-        final item = data[index];
+        final item = filteredData[index];
         final isFavorite =
             widget.favorites.any((favorite) => mapEquals(favorite, item));
         return GestureDetector(
