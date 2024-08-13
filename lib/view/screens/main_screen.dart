@@ -205,7 +205,7 @@ class _MobileState extends State<Mobile> {
           '- 국내 항공기: 운임의 10% 할인\n'
           '- 국내 여객선: 운임의 20% 할인\n'
           '※ 경로우대를 받고자 하는 자는 주민등록증 등 연령을 확인할 수 있는 신분증을 해당 시설의 관리자에게 제시해야 합니다.\n',
-      'imagePath': 'assets/images/손.jpg',
+      'imagePath': 'assets/images/철도.jpg',
     },
     {
       'title': '기초연금',
@@ -311,7 +311,8 @@ class _MobileState extends State<Mobile> {
           '독거노인 공동생활 카네이션 하우스:\n'
           '- 사업대상: 만65세 이상 독거 노인\n'
           '- 사업내용: 친목 도모, 프로그램(웃음치료, 요리활동 등) 제공\n'
-          '- 신청문의: 용인시 사랑의 집(☎031-338-5100)\n'
+          '- 신청문의: 용인시 사랑의 집(☎031-338-5100)\n',
+      'imagePath': 'assets/images/손.jpg',
     },
     {
       'title': '월동난방비 지원',

@@ -385,7 +385,10 @@ class _ChatScreenState extends State<ChatScreen> {
                                 hintStyle: TextStyle(color: Colors.black),
                                 border: InputBorder.none,
                               ),
-                              style: TextStyle(fontSize: _fontSize),
+                              style: TextStyle(
+                                fontSize: _fontSize, // 기존 글자 크기
+                                color: Colors.black, // 입력 중인 텍스트 색상 설정
+                              ),
                             ),
                           ),
                           Icon(Icons.mic, color: Colors.grey),

@@ -63,6 +63,7 @@ flutter:
     - assets/images/kakao_icon.png
     - assets/images/노인복지관.png
     - assets/images/손.jpg
+    - assets/images/철도.jpg
 
   fonts:
     - family: GmarketSansTTFBold
