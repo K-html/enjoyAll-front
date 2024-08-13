@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
-import 'package:khtml_hackathon_fe/view/screens/splash_screen.dart';
+import 'package:khtml_hackathon_fe/view/screens/main_screen.dart';
 
 void main() {
   KakaoSdk.init(
@@ -16,11 +16,10 @@ class FigmaToCodeApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color.fromARGB(255, 18, 32, 47),
-      ),
-      home: LoadingMobile(), // 앱이 시작될 때 LoadingMobile 스크린을 먼저 보여줍니다.
-      // home: CategorySelectScreen(),
-    );
+        theme: ThemeData.dark().copyWith(
+          scaffoldBackgroundColor: const Color.fromARGB(255, 18, 32, 47),
+        ),
+        // home: LoadingMobile(), // 앱이 시작될 때 LoadingMobile 스크린을 먼저 보여줍니다.
+        home: MainScreen());
   }
 }

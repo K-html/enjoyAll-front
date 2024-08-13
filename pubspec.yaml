@@ -61,6 +61,8 @@ flutter:
   assets:
     - assets/images/welcomescreen_image.jpg
     - assets/images/kakao_icon.png
+    - assets/images/노인복지관.png
+    - assets/images/손.jpg
 
   fonts:
     - family: GmarketSansTTFBold

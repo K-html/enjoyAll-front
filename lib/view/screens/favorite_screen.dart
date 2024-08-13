@@ -59,6 +59,7 @@ class FavoriteScreen extends StatelessWidget {
                           category1: item['category1']!,
                           category2: item['category2']!,
                           details: item['details']!,
+                          imagePath: item['imagePath'],
                         ),
                       ),
                     );

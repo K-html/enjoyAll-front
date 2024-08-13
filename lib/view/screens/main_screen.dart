@@ -204,7 +204,8 @@ class _MobileState extends State<Mobile> {
           '- 국·공립 국악원: 입장료 50% 이상 할인\n'
           '- 국내 항공기: 운임의 10% 할인\n'
           '- 국내 여객선: 운임의 20% 할인\n'
-          '※ 경로우대를 받고자 하는 자는 주민등록증 등 연령을 확인할 수 있는 신분증을 해당 시설의 관리자에게 제시해야 합니다.\n'
+          '※ 경로우대를 받고자 하는 자는 주민등록증 등 연령을 확인할 수 있는 신분증을 해당 시설의 관리자에게 제시해야 합니다.\n',
+      'imagePath': 'assets/images/손.jpg',
     },
     {
       'title': '기초연금',
@@ -260,7 +261,8 @@ class _MobileState extends State<Mobile> {
           '  - 사회교육사업: 교양교육, 건강증진, 취미여가, 정보화교실\n'
           '  - 복리후생사업: 경로식당, 이미용, 쉼터\n'
           '  - 지역복지사업: 어버이날, 노인의 날 행사, 결식, 결연 물품후원\n'
-          '  - 자원봉사사업: 실버인력뱅크 운영\n'
+          '  - 자원봉사사업: 실버인력뱅크 운영\n',
+      'imagePath': 'assets/images/노인복지관.png',
     },
     {
       'title': '무료급식지원',
@@ -577,6 +579,7 @@ class _MobileState extends State<Mobile> {
                   category1: item['category1']!,
                   category2: item['category2']!,
                   details: item['details']!,
+                  imagePath: item['imagePath'],
                 ),
               ),
             );
@@ -682,7 +685,7 @@ class _MobileState extends State<Mobile> {
 
   Widget _buildTag(String text) {
     return Container(
-      width: 60,
+      width: 90,
       height: 30,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -712,6 +715,7 @@ class DetailScreen extends StatelessWidget {
   final String category1;
   final String category2;
   final String details; // 상세 내용을 받을 변수 추가
+  final String? imagePath;
 
   const DetailScreen({
     Key? key,
@@ -720,103 +724,100 @@ class DetailScreen extends StatelessWidget {
     required this.category1,
     required this.category2,
     required this.details, // 추가된 변수
+    this.imagePath,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 234, 234, 234),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  height: 250,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage('assets/image.png'),
-                      fit: BoxFit.cover,
+      body: SafeArea(
+        // SafeArea를 Stack 전체를 감싸도록 수정
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 이미지 경로가 있는 경우에만 이미지 컨테이너를 표시
+                  if (imagePath != null && imagePath!.isNotEmpty)
+                    Container(
+                      height: 250,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: AssetImage(imagePath!),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: "GmarketSansTTFBold",
+                            color: Colors.black,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          date,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
+                            fontFamily: "GmarketSansTTFBold",
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            _buildTag(category1),
+                            const SizedBox(width: 10),
+                            _buildTag(category2),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          details, // 상세 내용 표시
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontFamily: "GmarketSansTTFBold",
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: "GmarketSansTTFBold",
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        date,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
-                          fontFamily: "GmarketSansTTFBold",
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          _buildTag(category1),
-                          const SizedBox(width: 10),
-                          _buildTag(category2),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        details, // 상세 내용 표시
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontFamily: "GmarketSansTTFBold",
-                          color: Colors.black,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Positioned(
-            top: 16,
-            left: 10,
-            child: IconButton(
-              icon: Icon(Icons.arrow_back, color: Colors.black),
-              onPressed: () {
-                Navigator.pop(context);
-              },
+            Positioned(
+              // 뒤로가기 버튼이 상단에 위치
+              top: -10,
+              left: 10,
+              child: IconButton(
+                icon: Icon(Icons.arrow_back, color: Colors.black),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
             ),
-          ),
-          Positioned(
-            top: 16,
-            right: 10,
-            child: IconButton(
-              icon: Icon(Icons.share, color: Colors.black),
-              onPressed: () {
-                // 공유 버튼 동작 구현
-              },
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildTag(String text) {
     return Container(
-      width: 60,
+      width: 90,
       height: 30,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
